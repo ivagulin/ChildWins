@@ -39,13 +39,18 @@ public class AddTaskActivity extends AppCompatActivity {
             return;
         }
 
-        int steps = stepsStr.isEmpty() ? 0 : Integer.parseInt(stepsStr);
+        if (reward.isEmpty()) {
+            etReward.setError("Required");
+            return;
+        }
+
+        int steps = stepsStr.isEmpty() ? 100 : Integer.parseInt(stepsStr);
 
         new Thread(() -> {
             try {
                 JSONObject json = new JSONObject();
                 json.put("name", name);
-                json.put("reward", reward.isEmpty() ? JSONObject.NULL : reward);
+                json.put("reward", reward);
                 json.put("steps", steps);
                 json.put("curstep", 0);
 
