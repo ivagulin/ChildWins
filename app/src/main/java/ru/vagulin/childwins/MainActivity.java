@@ -14,6 +14,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -34,6 +35,7 @@ public class MainActivity extends AppCompatActivity implements TaskAdapter.Liste
 
     private final List<Task> tasks = new ArrayList<>();
     private TaskAdapter adapter;
+    private SwipeRefreshLayout swipeRefresh;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,6 +58,10 @@ public class MainActivity extends AppCompatActivity implements TaskAdapter.Liste
                 }
             });
         }
+
+        swipeRefresh = (SwipeRefreshLayout) findViewById(R.id.swipeRefresh);
+        swipeRefresh.setOnRefreshListener(() -> loadTasks());
+        swipeRefresh.setRefreshing(true);
 
         loadTasks();
     }
@@ -95,10 +101,12 @@ public class MainActivity extends AppCompatActivity implements TaskAdapter.Liste
                     tasks.clear();
                     tasks.addAll(result);
                     adapter.notifyDataSetChanged();
+                    swipeRefresh.setRefreshing(false);
                 });
 
             } catch (Exception e) {
                 e.printStackTrace();
+                swipeRefresh.setRefreshing(false);
             }
         }).start();
     }
@@ -108,6 +116,7 @@ public class MainActivity extends AppCompatActivity implements TaskAdapter.Liste
         if (task.curstep >= task.steps) return;
 
         int newStep = task.curstep + 1;
+        swipeRefresh.setRefreshing(true);
 
         new Thread(() -> {
             try {
@@ -127,12 +136,12 @@ public class MainActivity extends AppCompatActivity implements TaskAdapter.Liste
 
                 if (conn.getResponseCode() == 204) {
                     runOnUiThread(() -> {
-                        task.curstep = newStep;
-                        adapter.notifyDataSetChanged();
+                        loadTasks();
                     });
                 }
             } catch (Exception e) {
                 e.printStackTrace();
+                swipeRefresh.setRefreshing(false);
             }
         }).start();
     }
@@ -150,6 +159,7 @@ public class MainActivity extends AppCompatActivity implements TaskAdapter.Liste
     }
 
     private void deleteTask(Task task) {
+        swipeRefresh.setRefreshing(true);
         new Thread(() -> {
             try {
                 URL url = new URL(URL + "?id=eq." + task.id);
@@ -158,8 +168,7 @@ public class MainActivity extends AppCompatActivity implements TaskAdapter.Liste
 
                 if (conn.getResponseCode() == 204) {
                     runOnUiThread(() -> {
-                        tasks.remove(task);
-                        adapter.notifyDataSetChanged();
+                        loadTasks();
                     });
                 }
             } catch (Exception e) {
