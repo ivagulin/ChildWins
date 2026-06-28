@@ -20,7 +20,7 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskViewHolder
 
     public interface Listener {
         void onIncrement(Task task);
-        void onDelete(Task task);
+        void onMenu(View anchor, Task task);
     }
 
     public TaskAdapter(List<Task> tasks, Listener listener, Context context) {
@@ -51,7 +51,7 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskViewHolder
         if (RoleSelectActivity.isParent(this.context)) {
             h.itemView.setOnClickListener(v -> listener.onIncrement(t));
             h.itemView.setOnLongClickListener(v -> {
-                listener.onDelete(t);
+                listener.onMenu(v, t);
                 return true;
             });
         }

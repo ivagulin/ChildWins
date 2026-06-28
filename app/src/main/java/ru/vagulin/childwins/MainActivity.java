@@ -5,6 +5,7 @@ import static android.view.View.VISIBLE;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.PopupMenu;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AlertDialog;
@@ -69,7 +70,7 @@ public class MainActivity extends AppCompatActivity implements TaskAdapter.Liste
     private void loadTasks() {
         new Thread(() -> {
             try {
-                URL url = new URL(URL);
+                URL url = new URL(URL + "?order=id.desc");
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("GET");
 
@@ -146,9 +147,43 @@ public class MainActivity extends AppCompatActivity implements TaskAdapter.Liste
         }).start();
     }
 
-    // ✅ LONG TAP → delete
     @Override
-    public void onDelete(Task task) {
+    public void onMenu(View anchor, Task task) {
+        if (!RoleSelectActivity.isParent(this)) return;
+
+        PopupMenu menu = new PopupMenu(this, anchor);
+        menu.inflate(R.menu.task_menu);
+
+        menu.setOnMenuItemClickListener(item -> {
+            int id = item.getItemId();
+
+            if (id == R.id.action_edit) {
+                editTask(task);
+                return true;
+            }
+
+            if (id == R.id.action_delete) {
+                onDelete(task);
+                return true;
+            }
+
+            return false;
+        });
+
+        menu.show();
+    }
+
+    private void editTask(Task task) {
+        Intent i = new Intent(this, AddTaskActivity.class);
+        i.putExtra("id", task.id);
+        i.putExtra("name", task.name);
+        i.putExtra("reward", task.reward);
+        i.putExtra("curstep", task.curstep);
+        i.putExtra("steps", task.steps);
+        startActivity(i);
+    }
+
+    private void onDelete(Task task) {
         new AlertDialog.Builder(this)
                 .setTitle("Delete task?")
                 .setMessage(task.name)
@@ -175,5 +210,12 @@ public class MainActivity extends AppCompatActivity implements TaskAdapter.Liste
                 e.printStackTrace();
             }
         }).start();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        swipeRefresh.setRefreshing(true);
+        loadTasks();
     }
 }

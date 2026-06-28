@@ -27,6 +27,14 @@
             android:layout_height="wrap_content"/>
 
         <EditText
+            android:id="@+id/etCurstep"
+            android:hint="Curstep"
+            android:inputType="number"
+            android:layout_marginTop="8dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
+
+        <EditText
             android:id="@+id/etSteps"
             android:hint="Steps"
             android:inputType="number"

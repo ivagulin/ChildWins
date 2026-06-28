@@ -1,6 +1,8 @@
 package ru.vagulin.childwins;
 
 import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
@@ -12,10 +14,12 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 
 public class AddTaskActivity extends AppCompatActivity {
 
-    private EditText etName, etReward, etSteps;
+    private EditText etName, etReward, etSteps, etCurstep;
+    private Integer taskId = null; // null = add mode
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -24,14 +28,39 @@ public class AddTaskActivity extends AppCompatActivity {
 
         etName = findViewById(R.id.etName);
         etReward = findViewById(R.id.etReward);
+        etCurstep = findViewById(R.id.etCurstep);
         etSteps = findViewById(R.id.etSteps);
+        var btnSave = (Button)findViewById(R.id.btnSave);
 
-        findViewById(R.id.btnSave).setOnClickListener(v -> addTask());
+        // ✅ Check edit mode
+        if (getIntent().hasExtra("id")) {
+            taskId = getIntent().getIntExtra("id", -1);
+
+            etName.setText(getIntent().getStringExtra("name"));
+            etReward.setText(getIntent().getStringExtra("reward"));
+            etCurstep.setText(
+                    String.valueOf(getIntent().getIntExtra("curstep", 0))
+            );
+            etSteps.setText(
+                    String.valueOf(getIntent().getIntExtra("steps", 100))
+            );
+
+            setTitle("Edit Task");
+            btnSave.setText("Save");
+        } else {
+            etCurstep.setText("0");
+            etSteps.setText("100");
+            setTitle("Add Task");
+            btnSave.setText("Add");
+        }
+
+        findViewById(R.id.btnSave).setOnClickListener(v -> saveTask());
     }
 
-    private void addTask() {
+    private void saveTask() {
         String name = etName.getText().toString().trim();
         String reward = etReward.getText().toString().trim();
+        String curstepStr = etCurstep.getText().toString().trim();
         String stepsStr = etSteps.getText().toString().trim();
 
         if (name.isEmpty()) {
@@ -44,22 +73,34 @@ public class AddTaskActivity extends AppCompatActivity {
             return;
         }
 
+        int curstep = curstepStr.isEmpty() ? 0 : Integer.parseInt(curstepStr);
         int steps = stepsStr.isEmpty() ? 100 : Integer.parseInt(stepsStr);
 
         new Thread(() -> {
             try {
                 JSONObject json = new JSONObject();
+                json.put("child", "maxim");
                 json.put("name", name);
                 json.put("reward", reward);
+                json.put("curstep", curstep);
                 json.put("steps", steps);
-                json.put("curstep", 0);
 
-                URL url = new URL(MainActivity.URL);
+                boolean isEdit = taskId != null;
+
+                URL url = isEdit
+                        ? new URL(MainActivity.URL + "?id=eq." + taskId)
+                        : new URL(MainActivity.URL);
+
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                conn.setRequestMethod("POST");
+                conn.setRequestMethod(isEdit ? "PATCH" : "POST");
                 conn.setRequestProperty("Content-Type", "application/json");
-                conn.setRequestProperty("Prefer", "return=representation");
+                conn.setRequestProperty("Prefer", "return=minimal");
                 conn.setDoOutput(true);
+
+                // Only add curstep on create
+                if (!isEdit) {
+                    json.put("curstep", 0);
+                }
 
                 OutputStream os = conn.getOutputStream();
                 os.write(json.toString().getBytes(StandardCharsets.UTF_8));
@@ -68,11 +109,19 @@ public class AddTaskActivity extends AppCompatActivity {
                 int code = conn.getResponseCode();
 
                 runOnUiThread(() -> {
-                    if (code == 201 || code == 200) {
-                        Toast.makeText(this, "Task added", Toast.LENGTH_SHORT).show();
+                    if (code == 200 || code == 201 || code == 204) {
+                        Toast.makeText(
+                                this,
+                                isEdit ? "Task updated" : "Task added",
+                                Toast.LENGTH_SHORT
+                        ).show();
                         finish();
                     } else {
-                        Toast.makeText(this, "Error: " + code, Toast.LENGTH_LONG).show();
+                        Toast.makeText(
+                                this,
+                                "Error: " + code,
+                                Toast.LENGTH_LONG
+                        ).show();
                     }
                 });
 
