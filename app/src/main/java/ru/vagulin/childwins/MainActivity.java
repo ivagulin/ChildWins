@@ -1,21 +1,20 @@
 package ru.vagulin.childwins;
 
 import static android.view.View.VISIBLE;
+import static android.view.View.combineMeasuredStates;
 
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.PopupMenu;
 
-import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
+
+import com.google.android.material.tabs.TabLayout;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -37,6 +36,7 @@ public class MainActivity extends AppCompatActivity implements TaskAdapter.Liste
     private final List<Task> tasks = new ArrayList<>();
     private TaskAdapter adapter;
     private SwipeRefreshLayout swipeRefresh;
+    private TabLayout tabs;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,17 +60,42 @@ public class MainActivity extends AppCompatActivity implements TaskAdapter.Liste
             });
         }
 
+        tabs = (TabLayout)findViewById(R.id.tabLayout);
+        tabs.addTab(tabs.newTab().setText("Активные"));
+        tabs.addTab(tabs.newTab().setText("Завершённые"));
+
         swipeRefresh = (SwipeRefreshLayout) findViewById(R.id.swipeRefresh);
-        swipeRefresh.setOnRefreshListener(() -> loadTasks());
+        swipeRefresh.setOnRefreshListener(this::loadTasks);
         swipeRefresh.setRefreshing(true);
 
-        loadTasks();
+        tabs.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+            @Override
+            public void onTabSelected(TabLayout.Tab tab) {
+                loadTasks();
+            }
+
+            @Override
+            public void onTabUnselected(TabLayout.Tab tab) {
+            }
+
+            @Override
+            public void onTabReselected(TabLayout.Tab tab) {
+            }
+        });
+
+
+        //loadTasks();
     }
 
     private void loadTasks() {
         new Thread(() -> {
             try {
-                URL url = new URL(URL + "?order=id.desc");
+                String tasksFilter = "completed=eq.false";
+                if (tabs.getSelectedTabPosition() == 1) {
+                    tasksFilter = "completed=eq.true";
+                }
+
+                URL url = new URL(URL + "?order=id.desc&"+tasksFilter);
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("GET");
 

@@ -8,10 +8,19 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
+        <com.google.android.material.appbar.AppBarLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+        <com.google.android.material.tabs.TabLayout
+            android:id="@+id/tabLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/tasksRecycler"
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
+        </com.google.android.material.appbar.AppBarLayout>
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
 
